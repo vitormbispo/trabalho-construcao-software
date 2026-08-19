@@ -7,3 +7,4 @@ Repositório do trabalho da disciplina de Construção de Software
 
 - Vitor Martins Bispo
 - Bruno Yozo Ricci Assakawa
+- Julio Cesar Carvalho de Paula Souza
