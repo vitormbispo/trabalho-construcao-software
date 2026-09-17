@@ -8,6 +8,7 @@ API de versionamento
 - Vitor Martins Bispo
 - Bruno Yozo Ricci Assakawa
 - Julio Cesar Carvalho de Paula Souza.
+- Gustavo Amaro Niehues
 
 ---
 
