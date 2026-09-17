@@ -8,6 +8,7 @@ API de versionamento
 - Vitor Martins Bispo
 - Bruno Yozo Ricci Assakawa
 - Julio Cesar Carvalho de Paula Souza.
+- Gustavo Amaro Niehues
 
 ---
 
@@ -37,5 +38,5 @@ No uso da CLI, a equipe poderá definir uma regra .anedotaignore para não inclu
 Modelagem agnóstica de dados: o núcleo manipula fluxos de bytes e objetos Blob genéricos, permitindo que a aplicação hospedeira versione desde arquivos em disco até estruturas em memória por meio da API.
 
 ## 🤝 Contribuição
-- Confira as regras de contribuição desse projeto em [CONTRIBUTION.md](https://github.com/vitormbispo/trabalho-construcao-software/blob/main/CONTRIBUTION.md)
+- Confira as regras de contribuição desse projeto em [CONTRIBUTING.md](https://github.com/vitormbispo/trabalho-construcao-software/blob/main/CONTRIBUTING.md)
 - Contribua relatando problemas e melhorias nas [issues](https://github.com/vitormbispo/trabalho-construcao-software/issues)!
