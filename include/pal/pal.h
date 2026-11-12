@@ -1,7 +1,7 @@
 #ifndef PAL_H
 #define PAL_H
 #include <stddef.h>
-typedef struct pal_file;
+typedef struct pal_file pal_file_t;
 
 struct pal_file *pal_open(const char *path, char *mode);
 int pal_close(struct pal_file *file);
