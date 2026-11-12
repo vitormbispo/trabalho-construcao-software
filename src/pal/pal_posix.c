@@ -19,7 +19,7 @@ struct pal_file *pal_open(const char *path, char *mode)
     return pf;
 }
 
-int *pal_close(struct pal_file *file)
+int pal_close(struct pal_file *file)
 {
     if (!file || !file->file) return -1;
 
