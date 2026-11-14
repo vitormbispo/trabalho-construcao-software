@@ -37,6 +37,19 @@ Não fazem parte do escopo inicial a sincronização remota, o servidor, a comun
 No uso da CLI, a equipe poderá definir uma regra .anedotaignore para não incluir arquivos temporários ou artefatos de compilação. \
 Modelagem agnóstica de dados: o núcleo manipula fluxos de bytes e objetos Blob genéricos, permitindo que a aplicação hospedeira versione desde arquivos em disco até estruturas em memória por meio da API.
 
+## Estrutura do armazenamento
+
+A inicialização cria a seguinte estrutura, usando as operações de diretório da PAL:
+
+```text
+.anedota/
+├── objetos/
+└── referencias/
+    └── branches/
+```
+
+`objetos/` armazenará os objetos versionados, e `referencias/branches/` armazenará referências a branches. A API `anedota_storage_init(root_path)`, declarada em `include/anedota/storage.h`, recebe o caminho do diretório raiz a criar; por exemplo, passe `.anedota` para criar o armazenamento no diretório atual. A inicialização falha se a raiz já existir.
+
 ## 🤝 Contribuição
 - Confira as regras de contribuição desse projeto em [CONTRIBUTING.md](https://github.com/vitormbispo/trabalho-construcao-software/blob/main/CONTRIBUTING.md)
 - Contribua relatando problemas e melhorias nas [issues](https://github.com/vitormbispo/trabalho-construcao-software/issues)!
