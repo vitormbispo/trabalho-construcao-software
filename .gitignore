@@ -1,0 +1,10 @@
+.idea/
+build/
+.cache/
+
+tags
+tags.*
+
+*.plist
+
+compile_commands.json
