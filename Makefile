@@ -31,10 +31,11 @@ $(BUILD_DIR)/tests/%: $(TEST_DIR)/%.c $(LIB_OBJS) | $(BUILD_DIR)
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^
 
-test: $(TEST_BINS)
+test: $(TARGET) $(TEST_BINS)
 	@for t in $(TEST_BINS); do \
 		./$$t || exit 1; \
 	done
+	sh $(TEST_DIR)/test_cli.sh "$(abspath $(TARGET))"
 
 $(BUILD_DIR):
 	mkdir -p $@
