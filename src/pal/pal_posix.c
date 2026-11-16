@@ -1,4 +1,5 @@
 #include <pal/pal.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -72,5 +73,18 @@ int pal_dir_delete(const char *path)
     if (!path) return -1;
 
     return rmdir(path) == 0 ? 0 : -1;
+}
+
+int pal_dir_exists(const char *path)
+{
+    if (!path) return -1;
+
+    struct stat st;
+    if (stat(path, &st) == 0)
+    {
+        return S_ISDIR(st.st_mode) ? 1 : 0;
+    }
+
+    return errno == ENOENT || errno == ENOTDIR ? 0 : -1;
 }
 

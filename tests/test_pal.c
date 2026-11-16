@@ -17,6 +17,8 @@ static void test_dir_create_and_delete(void)
 
     /* Criar diretório */
     assert(pal_dir_create("test_pal_dir") == 0);
+    assert(pal_dir_exists("test_pal_dir") == 1);
+    assert(pal_dir_exists(NULL) == -1);
 
     struct stat st;
     assert(stat("test_pal_dir", &st) == 0);
@@ -31,6 +33,7 @@ static void test_dir_create_and_delete(void)
     /* Remover diretório */
     assert(pal_dir_delete("test_pal_dir") == 0);
     assert(stat("test_pal_dir", &st) == -1);
+    assert(pal_dir_exists("test_pal_dir") == 0);
 
     /* Remover diretório inexistente ou nulo deve falhar */
     assert(pal_dir_delete("test_pal_dir") == -1);
@@ -63,6 +66,7 @@ static void test_file_open_write_read_close(void)
     /* Escrever conteúdo */
     int written = pal_write(wf, msg, msg_len);
     assert(written == (int)msg_len);
+    assert(pal_dir_exists(test_path) == 0);
 
     /* Fechar arquivo */
     assert(pal_close(wf) == 0);

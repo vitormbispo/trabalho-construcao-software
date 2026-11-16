@@ -20,7 +20,11 @@ test -d .anedota/objetos
 test -d .anedota/referencias/branches
 grep -q 'Armazenamento ANEDOTA inicializado' stdout.txt
 test ! -s stderr.txt
-expect_failure init
+printf 'preservar\n' > .anedota/objetos/sentinel
+"$cli" init >stdout.txt 2>stderr.txt
+grep -q 'Armazenamento ANEDOTA inicializado' stdout.txt
+test ! -s stderr.txt
+test "$(cat .anedota/objetos/sentinel)" = 'preservar'
 
 mkdir 'outro projeto'
 "$cli" init 'outro projeto/' >stdout.txt
