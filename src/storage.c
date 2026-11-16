@@ -21,6 +21,16 @@ static char *storage_path(const char *root_path, const char *relative_path)
     return path;
 }
 
+static int ensure_directory(const char *path)
+{
+    const int exists = pal_dir_exists(path);
+    if (exists == 1) return 0;
+    if (exists < 0) return -1;
+
+    if (pal_dir_create(path) == 0) return 0;
+    return pal_dir_exists(path) == 1 ? 0 : -1;
+}
+
 int anedota_storage_init(const char *root_path)
 {
     if (!root_path || root_path[0] == '\0') return -1;
@@ -38,10 +48,10 @@ int anedota_storage_init(const char *root_path)
     }
 
     int result = 0;
-    if (pal_dir_create(root_path) != 0 ||
-        pal_dir_create(objects_path) != 0 ||
-        pal_dir_create(references_path) != 0 ||
-        pal_dir_create(branches_path) != 0)
+    if (ensure_directory(root_path) != 0 ||
+        ensure_directory(objects_path) != 0 ||
+        ensure_directory(references_path) != 0 ||
+        ensure_directory(branches_path) != 0)
     {
         result = -1;
     }

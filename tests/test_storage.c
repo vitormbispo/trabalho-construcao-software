@@ -2,7 +2,9 @@
 #include <assert.h>
 #include <pal/pal.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 static int is_directory(const char *path)
 {
@@ -12,6 +14,7 @@ static int is_directory(const char *path)
 
 static void cleanup_storage(void)
 {
+    unlink("test_anedota_storage/objetos/sentinel");
     pal_dir_delete("test_anedota_storage/referencias/branches");
     pal_dir_delete("test_anedota_storage/referencias");
     pal_dir_delete("test_anedota_storage/objetos");
@@ -31,7 +34,19 @@ static void test_storage_init(void)
     assert(is_directory("test_anedota_storage/referencias"));
     assert(is_directory("test_anedota_storage/referencias/branches"));
 
-    assert(anedota_storage_init("test_anedota_storage") == -1);
+    const char *sentinel_path = "test_anedota_storage/objetos/sentinel";
+    struct pal_file *sentinel = pal_open(sentinel_path, "wb");
+    assert(sentinel != NULL);
+    assert(pal_write(sentinel, "preservar", 9) == 9);
+    assert(pal_close(sentinel) == 0);
+
+    assert(anedota_storage_init("test_anedota_storage") == 0);
+    sentinel = pal_open(sentinel_path, "rb");
+    assert(sentinel != NULL);
+    char content[9];
+    assert(pal_read(sentinel, content, sizeof(content)) == 9);
+    assert(memcmp(content, "preservar", sizeof(content)) == 0);
+    assert(pal_close(sentinel) == 0);
 
     cleanup_storage();
     assert(!is_directory("test_anedota_storage"));

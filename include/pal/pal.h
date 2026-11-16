@@ -10,6 +10,7 @@ int pal_write(struct pal_file *file, const char *buffer, size_t size);
 
 int pal_dir_create(const char *path);
 int pal_dir_delete(const char *path);
+int pal_dir_exists(const char *path);
 
 #endif
 
