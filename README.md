@@ -37,6 +37,14 @@ Não fazem parte do escopo inicial a sincronização remota, o servidor, a comun
 No uso da CLI, a equipe poderá definir uma regra .anedotaignore para não incluir arquivos temporários ou artefatos de compilação. \
 Modelagem agnóstica de dados: o núcleo manipula fluxos de bytes e objetos Blob genéricos, permitindo que a aplicação hospedeira versione desde arquivos em disco até estruturas em memória por meio da API.
 
+## Algoritmo de hash
+
+O ANEDOTA utilizará o **SHA-256** para calcular os identificadores dos objetos a partir do conteúdo armazenado. O valor será representado pela sua saída hexadecimal de 64 caracteres.
+
+A decisão considera o SHA-256 um algoritmo consolidado, amplamente suportado e adequado ao MVP. Ele oferece resistência prática a colisões e identifica o mesmo conteúdo de maneira determinística, permitindo endereçar objetos pelo seu conteúdo.
+
+Esta decisão será usada como base para a implementação da história H002. A implementação deverá calcular o hash sobre o conteúdo completo do arquivo ou fluxo de bytes recebido.
+
 ## Estrutura do armazenamento
 
 A inicialização cria a seguinte estrutura, usando as operações de diretório da PAL:
