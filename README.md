@@ -45,6 +45,8 @@ A decisão considera o SHA-256 um algoritmo consolidado, amplamente suportado e 
 
 Esta decisão será usada como base para a implementação da história H002. A implementação deverá calcular o hash sobre o conteúdo completo do arquivo ou fluxo de bytes recebido.
 
+A função `anedota_sha256_file`, declarada em `include/anedota/hash.h`, calcula o SHA-256 dos bytes restantes de um arquivo aberto pela PAL. O arquivo deve ser aberto em modo binário e continua sob responsabilidade de quem chamou a função. Em caso de sucesso, a função retorna `0` e escreve o resultado hexadecimal em um buffer de pelo menos `ANEDOTA_SHA256_HEX_SIZE` bytes (incluindo o terminador nulo). Em caso de argumento inválido, erro de leitura ou entrada maior que o limite do SHA-256, retorna `-1` sem alterar o buffer. A implementação é em C e não requer uma biblioteca criptográfica externa.
+
 ## Estrutura do armazenamento
 
 A inicialização cria a seguinte estrutura, usando as operações de diretório da PAL:
