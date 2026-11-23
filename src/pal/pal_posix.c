@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include <pal/pal.h>
 #include <errno.h>
 #include <stdio.h>
@@ -24,6 +25,36 @@ struct pal_file *pal_open(const char *path, char *mode)
         return NULL;
     }
     return pf;
+}
+
+struct pal_file *pal_open_temp(char *path)
+{
+    if (!path) return NULL;
+    pal_file_t *pf = malloc(sizeof(*pf));
+    if (!pf) return NULL;
+    int fd = mkstemp(path);
+    if (fd < 0) { free(pf); return NULL; }
+    pf->file = fdopen(fd, "wb");
+    if (!pf->file)
+    {
+        close(fd);
+        unlink(path);
+        free(pf);
+        return NULL;
+    }
+    return pf;
+}
+
+int pal_file_rename(const char *source, const char *destination)
+{
+    if (!source || !destination) return -1;
+    return rename(source, destination) == 0 ? 0 : -1;
+}
+
+int pal_file_delete(const char *path)
+{
+    if (!path) return -1;
+    return unlink(path) == 0 ? 0 : -1;
 }
 
 int pal_close(struct pal_file *file)
