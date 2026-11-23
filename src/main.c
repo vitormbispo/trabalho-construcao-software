@@ -14,7 +14,8 @@
     "\t--help, -h: Mostra essa mensagem\n" \
     "\t--version, -v: Mostra a versão, licença e autores\n" \
     "COMMANDS:\n" \
-    "\tinit [PATH]: Inicializa o repositório em PATH, ou no diretório atual se vazio"
+    "\tinit [PATH]: Inicializa o repositório em PATH, ou no diretório atual se vazio\n" \
+    "\thash-object FILE: Grava o arquivo no repositório atual e imprime seu hash"
 
 #define VERSION_MESSAGE ANEDOTA_CLI " " ANEDOTA_VERSION " Licença: " \
 	ANEDOTA_LICENSE "\n" "Escrito por " AUTHORS
@@ -39,6 +40,9 @@ int main(int argc, char **argv)
 
     if (strcmp(argv[1], "init") == 0)
         return anedota_command_init(argc - 2, argv + 2);
+
+    if (strcmp(argv[1], "hash-object") == 0)
+        return anedota_command_hash_object(argc - 2, argv + 2);
 
     if (argc != 2)
     {
