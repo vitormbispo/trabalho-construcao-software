@@ -2,5 +2,6 @@
 #define ANEDOTA_COMMANDS_H
 
 int anedota_command_init(int argc, char **argv);
+int anedota_command_hash_object(int argc, char **argv);
 
 #endif
