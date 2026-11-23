@@ -19,6 +19,8 @@ static void test_dir_create_and_delete(void)
     assert(pal_dir_create("test_pal_dir") == 0);
     assert(pal_dir_exists("test_pal_dir") == 1);
     assert(pal_dir_exists(NULL) == -1);
+    assert(pal_file_exists("test_pal_dir") == 0);
+    assert(pal_file_exists(NULL) == -1);
 
     struct stat st;
     assert(stat("test_pal_dir", &st) == 0);
@@ -54,6 +56,7 @@ static void test_file_open_write_read_close(void)
     assert(pal_open(NULL, "w") == NULL);
     assert(pal_open(test_path, NULL) == NULL);
     assert(pal_open("arquivo_que_nao_existe_12345.txt", "r") == NULL);
+    assert(pal_file_exists(test_path) == 0);
 
     /* Abrir para escrita */
     struct pal_file *wf = pal_open(test_path, "wb");
@@ -67,6 +70,7 @@ static void test_file_open_write_read_close(void)
     int written = pal_write(wf, msg, msg_len);
     assert(written == (int)msg_len);
     assert(pal_dir_exists(test_path) == 0);
+    assert(pal_file_exists(test_path) == 1);
 
     /* Fechar arquivo */
     assert(pal_close(wf) == 0);

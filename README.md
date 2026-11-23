@@ -60,7 +60,7 @@ A inicialização cria a seguinte estrutura, usando as operações de diretório
 
 `objetos/` armazenará os objetos versionados, e `referencias/branches/` armazenará referências a branches. A API `anedota_storage_init(root_path)`, declarada em `include/anedota/storage.h`, recebe o caminho do diretório raiz a criar; por exemplo, passe `.anedota` para criar o armazenamento no diretório atual. Se a estrutura já existir, inicializar novamente tem sucesso sem remover ou sobrescrever os dados existentes; diretórios esperados ausentes são criados.
 
-A função `anedota_blob_write_file(root_path, source_path, hash_out)`, também declarada em `include/anedota/storage.h`, lê o arquivo de origem por meio da PAL, calcula o seu SHA-256 e grava apenas o conteúdo bruto em `<root_path>/objetos/<hash>`, sem metadados do arquivo original. Em caso de sucesso, preenche `hash_out` com os 64 caracteres hexadecimais do hash e retorna `0`; em caso de erro, retorna `-1`.
+A função `anedota_blob_write_file(root_path, source_path, hash_out)`, também declarada em `include/anedota/storage.h`, lê o arquivo de origem por meio da PAL, calcula o seu SHA-256 e grava apenas o conteúdo bruto em `<root_path>/objetos/<hash>`, sem metadados do arquivo original. Se o objeto correspondente ao hash já existir no armazenamento, ele é preservado sem duplicação ou regravação. Em caso de sucesso, preenche `hash_out` com os 64 caracteres hexadecimais do hash e retorna `0`; em caso de erro, retorna `-1`.
 
 O comando `anedota hash-object FILE` grava o conteúdo do arquivo no repositório `.anedota` do diretório atual e imprime o hash. É necessário inicializar o repositório antes com `anedota init`.
 
