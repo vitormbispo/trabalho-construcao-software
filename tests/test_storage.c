@@ -125,7 +125,10 @@ static void test_blob_write_file(void)
     assert(memcmp(buffer, "abc", 3) == 0);
     assert(pal_close(blob) == 0);
 
-    /* Outro arquivo com nome, data e permissões diferentes gera o mesmo hash e conteúdo */
+    /* Outro arquivo com nome, data e permissões diferentes gera o mesmo hash e preserva o único Blob existente em disco */
+    struct stat st_before, st_after;
+    assert(stat(abc_blob_path, &st_before) == 0);
+
     write_test_file(source_b, "abc", 3);
     struct utimbuf time_b = { 1700000000, 1700000000 };
     assert(utime(source_b, &time_b) == 0);
@@ -134,6 +137,8 @@ static void test_blob_write_file(void)
     char hash_b[ANEDOTA_SHA256_HEX_SIZE];
     assert(anedota_blob_write_file("test_anedota_storage/", source_b, hash_b) == 0);
     assert(strcmp(hash_b, abc_hash) == 0);
+    assert(stat(abc_blob_path, &st_after) == 0);
+    assert(st_before.st_ino == st_after.st_ino);
 
     /* Conteúdo binário com bytes nulos e arquivo vazio */
     const unsigned char binary[] = { 0, 1, 255, 'a', 'b', 'c', 0 };

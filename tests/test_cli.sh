@@ -39,6 +39,11 @@ cmp 'arquivo de origem' ".anedota/objetos/$(cat expected.txt)"
 "$cli" hash-object 'arquivo de origem' >stdout.txt 2>stderr.txt
 cmp stdout.txt expected.txt
 test ! -s stderr.txt
+printf 'abc' > 'outro nome.txt'
+"$cli" hash-object 'outro nome.txt' >stdout.txt 2>stderr.txt
+cmp stdout.txt expected.txt
+test ! -s stderr.txt
+test "$(find .anedota/objetos -mindepth 1 -maxdepth 1 ! -name sentinel | wc -l | tr -d ' ')" = '1'
 expect_failure hash-object
 expect_failure hash-object ''
 expect_failure hash-object 'arquivo de origem' extra

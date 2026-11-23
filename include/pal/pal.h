@@ -6,6 +6,7 @@ typedef struct pal_file pal_file_t;
 struct pal_file *pal_open(const char *path, char *mode);
 /* Creates a unique temporary file by replacing the final XXXXXX in path. */
 struct pal_file *pal_open_temp(char *path);
+int pal_file_exists(const char *path);
 int pal_file_rename(const char *source, const char *destination);
 int pal_file_delete(const char *path);
 int pal_close(struct pal_file *file);

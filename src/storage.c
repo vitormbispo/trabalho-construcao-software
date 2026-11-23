@@ -120,7 +120,26 @@ int anedota_blob_write_file(const char *root_path, const char *source_path,
         }
     }
     char *blob_path = result == 0 ? storage_path(objects_path, hash) : NULL;
-    if (!blob_path || pal_file_rename(temp_path, blob_path) != 0) result = -1;
+    if (!blob_path)
+    {
+        result = -1;
+    }
+    else
+    {
+        const int exists = pal_file_exists(blob_path);
+        if (exists == 1)
+        {
+            if (pal_file_delete(temp_path) != 0) result = -1;
+        }
+        else if (exists == 0)
+        {
+            if (pal_file_rename(temp_path, blob_path) != 0) result = -1;
+        }
+        else
+        {
+            result = -1;
+        }
+    }
     if (result != 0) pal_file_delete(temp_path);
     else memcpy(hash_out, hash, ANEDOTA_SHA256_HEX_SIZE);
     free(blob_path);

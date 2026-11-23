@@ -45,6 +45,19 @@ struct pal_file *pal_open_temp(char *path)
     return pf;
 }
 
+int pal_file_exists(const char *path)
+{
+    if (!path) return -1;
+
+    struct stat st;
+    if (stat(path, &st) == 0)
+    {
+        return S_ISREG(st.st_mode) ? 1 : 0;
+    }
+
+    return errno == ENOENT || errno == ENOTDIR ? 0 : -1;
+}
+
 int pal_file_rename(const char *source, const char *destination)
 {
     if (!source || !destination) return -1;
