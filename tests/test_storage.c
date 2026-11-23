@@ -116,6 +116,15 @@ static void test_blob_write_file(void)
     assert(pal_read(blob, buffer, sizeof(buffer)) == 0);
     assert(pal_close(blob) == 0);
 
+    /* O próprio objeto pode ser usado como origem sem perder seus bytes. */
+    assert(anedota_blob_write_file(root, abc_blob_path, hash) == 0);
+    assert(strcmp(hash, abc_hash) == 0);
+    blob = pal_open(abc_blob_path, "rb");
+    assert(blob != NULL);
+    assert(pal_read(blob, buffer, sizeof(buffer)) == 3);
+    assert(memcmp(buffer, "abc", 3) == 0);
+    assert(pal_close(blob) == 0);
+
     /* Outro arquivo com nome, data e permissões diferentes gera o mesmo hash e conteúdo */
     write_test_file(source_b, "abc", 3);
     struct utimbuf time_b = { 1700000000, 1700000000 };
