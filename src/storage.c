@@ -66,6 +66,91 @@ int anedota_storage_init(const char *root_path)
     return result;
 }
 
+static int write_all(pal_file_t *file, const void *buffer, size_t size);
+
+int anedota_blob_write(const char *root_path, const void *data, size_t size,
+                       char hash_out[ANEDOTA_SHA256_HEX_SIZE])
+{
+    if (!root_path || root_path[0] == '\0' || !hash_out || (size > 0 && !data))
+    {
+        return -1;
+    }
+
+    char *objects_path = storage_path(root_path, "objetos");
+    if (!objects_path) return -1;
+    if (pal_dir_exists(objects_path) != 1)
+    {
+        free(objects_path);
+        return -1;
+    }
+
+    char hash[ANEDOTA_SHA256_HEX_SIZE];
+    if (anedota_sha256_bytes(data, size, hash) != 0)
+    {
+        free(objects_path);
+        return -1;
+    }
+
+    char *blob_path = storage_path(objects_path, hash);
+    if (!blob_path)
+    {
+        free(objects_path);
+        return -1;
+    }
+
+    const int exists = pal_file_exists(blob_path);
+    if (exists < 0)
+    {
+        free(blob_path);
+        free(objects_path);
+        return -1;
+    }
+    if (exists == 1)
+    {
+        memcpy(hash_out, hash, ANEDOTA_SHA256_HEX_SIZE);
+        free(blob_path);
+        free(objects_path);
+        return 0;
+    }
+
+    char *temp_path = storage_path(objects_path, ".blob-XXXXXX");
+    free(objects_path);
+    if (!temp_path)
+    {
+        free(blob_path);
+        return -1;
+    }
+
+    pal_file_t *temp = pal_open_temp(temp_path);
+    if (!temp)
+    {
+        free(temp_path);
+        free(blob_path);
+        return -1;
+    }
+
+    int result = 0;
+    if (size > 0 && write_all(temp, data, size) != 0) result = -1;
+    if (pal_close(temp) != 0) result = -1;
+
+    if (result == 0 && pal_file_rename(temp_path, blob_path) != 0)
+    {
+        result = -1;
+    }
+    if (result != 0)
+    {
+        pal_file_delete(temp_path);
+    }
+    else
+    {
+        memcpy(hash_out, hash, ANEDOTA_SHA256_HEX_SIZE);
+    }
+
+    free(temp_path);
+    free(blob_path);
+    return result;
+}
+
 int anedota_blob_write_file(const char *root_path, const char *source_path,
                             char hash_out[ANEDOTA_SHA256_HEX_SIZE])
 {

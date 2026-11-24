@@ -61,6 +61,61 @@ static void compress(uint32_t state[8], const unsigned char block[64])
     state[4] += e; state[5] += f; state[6] += g; state[7] += h;
 }
 
+static void finalize_sha256(uint32_t state[8], unsigned char buffer[64],
+                            size_t used, uint64_t total_bytes,
+                            char output[ANEDOTA_SHA256_HEX_SIZE])
+{
+    buffer[used++] = 0x80;
+    if (used > 56)
+    {
+        memset(buffer + used, 0, 64 - used);
+        compress(state, buffer);
+        used = 0;
+    }
+    memset(buffer + used, 0, 56 - used);
+    uint64_t bits = total_bytes * 8;
+    for (unsigned int i = 0; i < 8; ++i)
+        buffer[63 - i] = (unsigned char)(bits >> (i * 8));
+    compress(state, buffer);
+
+    static const char hex[] = "0123456789abcdef";
+    for (unsigned int i = 0; i < 32; ++i)
+    {
+        unsigned int byte = (state[i / 4] >> (24 - 8 * (i % 4))) & 0xffu;
+        output[2 * i] = hex[byte >> 4];
+        output[2 * i + 1] = hex[byte & 0xf];
+    }
+    output[64] = '\0';
+}
+
+int anedota_sha256_bytes(const void *data, size_t size,
+                         char output[ANEDOTA_SHA256_HEX_SIZE])
+{
+    if (!output || (size > 0 && !data)) return -1;
+    if ((uint64_t)size > UINT64_MAX / 8) return -1;
+
+    uint32_t state[8] = { 0x6a09e667u, 0xbb67ae85u, 0x3c6ef372u, 0xa54ff53au,
+                          0x510e527fu, 0x9b05688cu, 0x1f83d9abu, 0x5be0cd19u };
+    unsigned char buffer[64];
+    const unsigned char *bytes = (const unsigned char *)data;
+    size_t offset = 0;
+
+    while (size - offset >= sizeof(buffer))
+    {
+        compress(state, bytes + offset);
+        offset += sizeof(buffer);
+    }
+
+    const size_t remaining = size - offset;
+    if (remaining > 0)
+    {
+        memcpy(buffer, bytes + offset, remaining);
+    }
+
+    finalize_sha256(state, buffer, remaining, (uint64_t)size, output);
+    return 0;
+}
+
 int anedota_sha256_file(pal_file_t *file, char output[ANEDOTA_SHA256_HEX_SIZE])
 {
     if (!file || !output) return -1;
@@ -85,26 +140,6 @@ int anedota_sha256_file(pal_file_t *file, char output[ANEDOTA_SHA256_HEX_SIZE])
     }
     if (count < 0) return -1;
 
-    buffer[used++] = 0x80;
-    if (used > 56)
-    {
-        memset(buffer + used, 0, sizeof(buffer) - used);
-        compress(state, buffer);
-        used = 0;
-    }
-    memset(buffer + used, 0, 56 - used);
-    uint64_t bits = total_bytes * 8;
-    for (unsigned int i = 0; i < 8; ++i)
-        buffer[63 - i] = (unsigned char)(bits >> (i * 8));
-    compress(state, buffer);
-
-    static const char hex[] = "0123456789abcdef";
-    for (unsigned int i = 0; i < 32; ++i)
-    {
-        unsigned int byte = (state[i / 4] >> (24 - 8 * (i % 4))) & 0xffu;
-        output[2 * i] = hex[byte >> 4];
-        output[2 * i + 1] = hex[byte & 0xf];
-    }
-    output[64] = '\0';
+    finalize_sha256(state, buffer, used, total_bytes, output);
     return 0;
 }

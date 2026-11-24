@@ -46,6 +46,7 @@ static void cleanup_storage(void)
     unlink("test_anedota_storage/objetos/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     unlink("test_anedota_storage/objetos/9e8a7798d05322487ac8cfe4b88e15f6dc4a19d718b37b8675476f691468f534");
     unlink("test_anedota_storage/objetos/1e973d029df2b2c66cb42a942c5edb45966f02abaff29fe99410e44d271d0efc");
+    unlink("test_anedota_storage/objetos/6c1eb2a3c4696aba55b734662bf880a5702b288a82ca0f8b9f72eeb8f2cffd07");
     unlink("test_blob_source_a.txt");
     unlink("test_blob_source_b.bin");
     unlink("test_blob_empty.txt");
