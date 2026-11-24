@@ -8,7 +8,64 @@
 static void cleanup_test_artifacts(void)
 {
     unlink("test_pal_file.txt");
+    unlink("test_pal_dir/file.txt");
+    unlink("test_pal_dir/subdir/nested.txt");
+    rmdir("test_pal_dir/subdir");
     rmdir("test_pal_dir");
+}
+
+static void test_dir_iteration(void)
+{
+    cleanup_test_artifacts();
+
+    assert(pal_dir_open(NULL) == NULL);
+    assert(pal_dir_open("") == NULL);
+    assert(pal_dir_open("missing_test_pal_dir") == NULL);
+
+    assert(pal_dir_create("test_pal_dir") == 0);
+    assert(pal_dir_create("test_pal_dir/subdir") == 0);
+    struct pal_file *file = pal_open("test_pal_dir/file.txt", "wb");
+    assert(file != NULL);
+    assert(pal_close(file) == 0);
+
+    pal_directory_t *directory = pal_dir_open("test_pal_dir");
+    assert(directory != NULL);
+
+    int found_file = 0;
+    int found_subdirectory = 0;
+    const char *name = NULL;
+    pal_dir_entry_type_t type;
+    int result;
+    while ((result = pal_dir_next(directory, &name, &type)) == 1)
+    {
+        assert(strcmp(name, ".") != 0);
+        assert(strcmp(name, "..") != 0);
+        if (strcmp(name, "file.txt") == 0)
+        {
+            assert(type == PAL_DIR_ENTRY_FILE);
+            found_file = 1;
+        }
+        else if (strcmp(name, "subdir") == 0)
+        {
+            assert(type == PAL_DIR_ENTRY_DIRECTORY);
+            found_subdirectory = 1;
+        }
+        else
+        {
+            assert(0 && "unexpected directory entry");
+        }
+    }
+    assert(result == 0);
+    assert(found_file);
+    assert(found_subdirectory);
+    assert(pal_dir_next(NULL, &name, &type) == -1);
+    assert(pal_dir_next(directory, NULL, &type) == -1);
+    assert(pal_dir_next(directory, &name, NULL) == -1);
+    assert(pal_dir_close(directory) == 0);
+    assert(pal_dir_close(NULL) == -1);
+
+    cleanup_test_artifacts();
+    printf("[PASS] test_dir_iteration\n");
 }
 
 static void test_dir_create_and_delete(void)
@@ -105,6 +162,7 @@ int main(void)
 {
     printf("Executando testes da PAL...\n");
     test_dir_create_and_delete();
+    test_dir_iteration();
     test_file_open_write_read_close();
     printf("Testes da PAL concluídos com sucesso\n");
     return 0;

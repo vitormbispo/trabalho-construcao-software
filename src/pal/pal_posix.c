@@ -3,12 +3,20 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <fcntl.h>
 
 struct pal_file
 {
     FILE *file;
+};
+
+struct pal_directory
+{
+    DIR *directory;
 };
 
 struct pal_file *pal_open(const char *path, char *mode)
@@ -130,5 +138,75 @@ int pal_dir_exists(const char *path)
     }
 
     return errno == ENOENT || errno == ENOTDIR ? 0 : -1;
+}
+
+pal_directory_t *pal_dir_open(const char *path)
+{
+    if (!path || path[0] == '\0') return NULL;
+
+    DIR *directory = opendir(path);
+    if (!directory) return NULL;
+
+    pal_directory_t *iterator = malloc(sizeof(*iterator));
+    if (!iterator)
+    {
+        closedir(directory);
+        return NULL;
+    }
+
+    iterator->directory = directory;
+    return iterator;
+}
+
+int pal_dir_next(pal_directory_t *directory, const char **name_out,
+                 pal_dir_entry_type_t *type_out)
+{
+    if (!directory || !directory->directory || !name_out || !type_out) return -1;
+
+    struct dirent *entry;
+    while (1)
+    {
+        errno = 0;
+        entry = readdir(directory->directory);
+        if (!entry)
+        {
+            return errno == 0 ? 0 : -1;
+        }
+
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+        {
+            continue;
+        }
+
+        struct stat st;
+        if (fstatat(dirfd(directory->directory), entry->d_name, &st,
+                    AT_SYMLINK_NOFOLLOW) != 0)
+        {
+            return -1;
+        }
+
+        pal_dir_entry_type_t type = PAL_DIR_ENTRY_OTHER;
+        if (S_ISREG(st.st_mode))
+        {
+            type = PAL_DIR_ENTRY_FILE;
+        }
+        else if (S_ISDIR(st.st_mode))
+        {
+            type = PAL_DIR_ENTRY_DIRECTORY;
+        }
+
+        *name_out = entry->d_name;
+        *type_out = type;
+        return 1;
+    }
+}
+
+int pal_dir_close(pal_directory_t *directory)
+{
+    if (!directory || !directory->directory) return -1;
+
+    const int result = closedir(directory->directory);
+    free(directory);
+    return result == 0 ? 0 : -1;
 }
 
