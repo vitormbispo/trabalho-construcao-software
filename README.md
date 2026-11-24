@@ -64,6 +64,12 @@ A função `anedota_blob_write_file(root_path, source_path, hash_out)`, também 
 
 A função `anedota_blob_read(root_path, hash, data_out, size_out)`, declarada em `include/anedota/storage.h`, lê por meio da PAL o Blob identificado por `hash` em `<root_path>/objetos/<hash>`. Em caso de sucesso, aloca um buffer com o conteúdo original do Blob (com um terminador nulo adicional ao final), atribui o ponteiro a `*data_out`, o tamanho em bytes a `*size_out` e retorna `0` (cabendo ao chamador liberar `*data_out` com `free`). Em caso de argumento inválido, hash inexistente ou erro de leitura, retorna `-1` sem alterar `*data_out` e `*size_out`.
 
+## Objetos Tree
+
+A API em `include/anedota/tree.h` cria e lê objetos Tree compostos por entradas em memória. Cada entrada contém um nome, o tipo do objeto filho (`Blob` ou `Tree`) e seu hash SHA-256. A escrita exige que os objetos filhos já existam em `objetos/`; nomes duplicados, inválidos ou referências ausentes são rejeitados. A leitura retorna uma única alocação com a Tree e suas entradas, que deve ser liberada com `free`.
+
+O formato serializado é binário e determinístico: os 8 bytes ASCII `ANEDOTAT`, um byte de versão (`1`), a quantidade de entradas como inteiro sem sinal de 32 bits em big-endian e, para cada entrada, um byte de tipo (`1` para Blob, `2` para Tree), o tamanho do nome como inteiro sem sinal de 32 bits em big-endian, os 64 caracteres ASCII do hash em hexadecimal minúsculo e os bytes do nome. As entradas são ordenadas por nome em ordem lexicográfica de bytes; nomes vazios, `.`/`..`, com NUL ou `/` e nomes duplicados não são válidos.
+
 O comando `anedota hash-object FILE` grava o conteúdo do arquivo no repositório `.anedota` do diretório atual e imprime o hash. É necessário inicializar o repositório antes com `anedota init`.
 
 O comando `anedota cat-object HASH` imprime no `stdout` os bytes do Blob identificado pelo hash no repositório `.anedota` do diretório atual. O conteúdo é emitido sem conversão ou quebra de linha adicional.
