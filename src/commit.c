@@ -1,4 +1,5 @@
 #include <anedota/commit.h>
+#include <anedota/ref.h>
 #include <anedota/storage.h>
 #include <anedota/tree.h>
 #include <pal/pal.h>
@@ -216,6 +217,12 @@ int anedota_commit_write(const char *root_path,
     }
     if (pal_file_delete(temp_path) != 0) result = -1;
     free(temp_path);
+
+    if (result == 0 &&
+        anedota_ref_update_head(root_path, commit_hash) != 0)
+    {
+        result = -1;
+    }
 
     if (result == 0)
     {
