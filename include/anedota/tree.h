@@ -37,10 +37,6 @@ int anedota_tree_write(const char *root_path,
 int anedota_tree_read(const char *root_path, const char *hash,
                       anedota_tree_t **tree_out);
 
-/* Recursively stores a Tree snapshot of dir_path using the PAL. Regular files
- * are stored as Blobs, subdirectories as Trees, and any ".anedota" directory
- * is excluded from the snapshot. On success writes the root Tree's SHA-256 to
- * hash_out and returns 0; on error returns -1 without changing hash_out. */
 int anedota_tree_write_directory(const char *root_path, const char *dir_path,
                                  char hash_out[ANEDOTA_SHA256_HEX_SIZE]);
 
