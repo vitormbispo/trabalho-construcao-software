@@ -17,7 +17,8 @@
     "\tinit [PATH]: Inicializa o repositório em PATH, ou no diretório atual se vazio\n" \
     "\thash-object FILE: Grava o arquivo no repositório atual e imprime seu hash\n" \
     "\tcat-object HASH: Imprime o conteúdo do Blob identificado pelo hash\n" \
-    "\twrite-tree [PATH]: Grava a Tree do diretório no repositório atual e imprime seu hash"
+    "\twrite-tree [PATH]: Grava a Tree do diretório no repositório atual e imprime seu hash\n" \
+    "\tcommit -m MESSAGE [-a AUTHOR]: Cria um Commit com o snapshot atual e imprime seu hash"
 
 #define VERSION_MESSAGE ANEDOTA_CLI " " ANEDOTA_VERSION " Licença: " \
 	ANEDOTA_LICENSE "\n" "Escrito por " AUTHORS
@@ -51,6 +52,9 @@ int main(int argc, char **argv)
 
     if (strcmp(argv[1], "write-tree") == 0)
         return anedota_command_write_tree(argc - 2, argv + 2);
+
+    if (strcmp(argv[1], "commit") == 0)
+        return anedota_command_commit(argc - 2, argv + 2);
 
     if (argc != 2)
     {

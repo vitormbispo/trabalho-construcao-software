@@ -66,6 +66,7 @@ mkdir sem_repositorio
 (cd sem_repositorio && expect_failure hash-object ../'arquivo de origem')
 (cd sem_repositorio && expect_failure cat-object "$(cat ../expected.txt)")
 (cd sem_repositorio && expect_failure write-tree)
+(cd sem_repositorio && expect_failure commit -m 'sem repo')
 
 mkdir -p arvore_a/sub/profundo arvore_a/vazio
 printf 'raiz\n' > arvore_a/raiz.txt
@@ -99,6 +100,35 @@ expect_failure write-tree arvore_b extra
 expect_failure write-tree inexistente
 expect_failure write-tree 'arquivo de origem'
 
+mkdir repo_commit
+printf 'v1\n' > repo_commit/arquivo.txt
+(cd repo_commit && "$cli" init >stdout.txt 2>stderr.txt)
+rm repo_commit/stdout.txt repo_commit/stderr.txt
+(cd repo_commit && "$cli" commit -m 'Commit inicial' >../commit_1.txt 2>../stderr.txt)
+test ! -s stderr.txt
+test "$(wc -c < commit_1.txt | tr -d ' ')" = '65'
+test -f "repo_commit/.anedota/objetos/$(cat commit_1.txt)"
+cmp commit_1.txt repo_commit/.anedota/referencias/branches/main
+test "$(cat repo_commit/.anedota/HEAD)" = 'ref: referencias/branches/main'
+
+printf 'v2\n' > repo_commit/arquivo.txt
+mkdir repo_commit/sub
+printf 'novo\n' > repo_commit/sub/item.txt
+(cd repo_commit && "$cli" commit -m 'Segundo commit' -a 'Vitor' >../commit_2.txt 2>../stderr.txt)
+test ! -s stderr.txt
+test "$(wc -c < commit_2.txt | tr -d ' ')" = '65'
+test "$(cat commit_1.txt)" != "$(cat commit_2.txt)"
+test -f "repo_commit/.anedota/objetos/$(cat commit_2.txt)"
+cmp commit_2.txt repo_commit/.anedota/referencias/branches/main
+
+(cd repo_commit && expect_failure commit)
+(cd repo_commit && expect_failure commit -m)
+(cd repo_commit && expect_failure commit -m '')
+(cd repo_commit && expect_failure commit -m 'msg' -a)
+(cd repo_commit && expect_failure commit -m 'msg' -a '')
+(cd repo_commit && expect_failure commit -m 'msg' -m 'dup')
+(cd repo_commit && expect_failure commit -m 'msg' extra)
+
 expect_failure init extra excedente
 test ! -e extra
 expect_failure init ''
@@ -114,6 +144,7 @@ grep -q 'init \[PATH\]' stdout.txt
 grep -q 'hash-object FILE' stdout.txt
 grep -q 'cat-object HASH' stdout.txt
 grep -q 'write-tree \[PATH\]' stdout.txt
+grep -q 'commit -m MESSAGE \[-a AUTHOR\]' stdout.txt
 "$cli" -h >short.txt
 cmp stdout.txt short.txt
 "$cli" --version >stdout.txt

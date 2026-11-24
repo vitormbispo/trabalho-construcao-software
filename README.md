@@ -76,6 +76,16 @@ O comando `anedota cat-object HASH` imprime no `stdout` os bytes do Blob identif
 
 O comando `anedota write-tree [PATH]` grava recursivamente a Tree correspondente a `PATH` (ou ao diretório atual, se omitido) no repositório `.anedota` do diretório atual, ignorando `.anedota/`, e imprime o hash da Tree raiz.
 
+## Objetos Commit
+
+A API em `include/anedota/commit.h` cria e lê objetos Commit no armazenamento via PAL. Cada Commit referencia uma Tree válida existente em `objetos/`, opcionalmente um Commit pai válido, o autor/identificador, a data (timestamp) e a mensagem. A leitura via `anedota_commit_read` retorna uma única alocação contendo a estrutura e suas strings, que deve ser liberada com `free`.
+
+O formato serializado é binário e determinístico: os 8 bytes ASCII `ANEDOTAC`, um byte de versão (`1`), os 64 caracteres ASCII em hexadecimal minúsculo do hash da Tree, um byte indicando presença de Commit pai (`0` para ausente, `1` para presente), opcionalmente os 64 caracteres ASCII do hash do Commit pai quando presente, e em sequência os campos não vazios `autor`, `data` e `mensagem`, cada um prefixado por seu tamanho em bytes como inteiro sem sinal de 32 bits em big-endian e sem bytes NUL internos.
+
+A referência atual do armazenamento é gerenciada pela API em `include/anedota/ref.h` exclusivamente via PAL, utilizando `HEAD` (por padrão `ref: referencias/branches/main`) e `referencias/branches/`. `anedota_ref_read_head` retorna `0` quando o armazenamento ainda não possui commits, `1` quando há histórico (preenchendo o hash do Commit atual) e `-1` em caso de erro. Ao criar um novo Commit com `anedota_commit_write`, a referência atual é atualizada automaticamente para apontar para o novo Commit.
+
+O comando `anedota commit -m MESSAGE [-a AUTHOR]` gera o snapshot completo do diretório atual em uma Tree, cria o Commit encadeado à referência atual (quando existir histórico), atualiza `HEAD` e imprime o hash do Commit criado. Se `-a AUTHOR` for omitido, utiliza `ANEDOTA_AUTHOR`, `USER` ou `desconhecido`.
+
 ## 🤝 Contribuição
 - Confira as regras de contribuição desse projeto em [CONTRIBUTING.md](https://github.com/vitormbispo/trabalho-construcao-software/blob/main/CONTRIBUTING.md)
 - Contribua relatando problemas e melhorias nas [issues](https://github.com/vitormbispo/trabalho-construcao-software/issues)!
