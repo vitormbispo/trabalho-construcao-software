@@ -332,6 +332,18 @@ static void test_blob_read(void)
     assert(memcmp(data, large_bytes, sizeof(large_bytes)) == 0);
     free(data);
 
+    /* Hash válido retorna conteúdo que ocupa exatamente um bloco de leitura */
+    unsigned char block_bytes[4096];
+    for (size_t i = 0; i < sizeof(block_bytes); ++i)
+        block_bytes[i] = (unsigned char)(i * 3);
+    write_test_file(large_source, block_bytes, sizeof(block_bytes));
+    assert(anedota_blob_write_file(root, large_source, hash) == 0);
+    assert(anedota_blob_read(root, hash, &data, &size) == 0);
+    assert(data != NULL);
+    assert(size == sizeof(block_bytes));
+    assert(memcmp(data, block_bytes, sizeof(block_bytes)) == 0);
+    free(data);
+
     cleanup_storage();
     printf("[PASS] test_blob_read\n");
 }
