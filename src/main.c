@@ -18,7 +18,9 @@
     "\thash-object FILE: Grava o arquivo no repositório atual e imprime seu hash\n" \
     "\tcat-object HASH: Imprime o conteúdo do Blob identificado pelo hash\n" \
     "\twrite-tree [PATH]: Grava a Tree do diretório no repositório atual e imprime seu hash\n" \
-    "\tcommit -m MESSAGE [-a AUTHOR]: Cria um Commit com o snapshot atual e imprime seu hash"
+    "\tcommit -m MESSAGE [-a AUTHOR]: Cria um Commit com o snapshot atual e imprime seu hash\n" \
+    "\tlog: Exibe o histórico de commits a partir da referência atual\n" \
+    "\tdiff VERSION_A VERSION_B: Compara duas versões e exibe as diferenças"
 
 #define VERSION_MESSAGE ANEDOTA_CLI " " ANEDOTA_VERSION " Licença: " \
 	ANEDOTA_LICENSE "\n" "Escrito por " AUTHORS
@@ -55,6 +57,12 @@ int main(int argc, char **argv)
 
     if (strcmp(argv[1], "commit") == 0)
         return anedota_command_commit(argc - 2, argv + 2);
+
+    if (strcmp(argv[1], "log") == 0)
+        return anedota_command_log(argc - 2, argv + 2);
+
+    if (strcmp(argv[1], "diff") == 0)
+        return anedota_command_diff(argc - 2, argv + 2);
 
     if (argc != 2)
     {

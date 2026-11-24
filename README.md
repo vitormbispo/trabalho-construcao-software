@@ -86,6 +86,28 @@ A referência atual do armazenamento é gerenciada pela API em `include/anedota/
 
 O comando `anedota commit -m MESSAGE [-a AUTHOR]` gera o snapshot completo do diretório atual em uma Tree, cria o Commit encadeado à referência atual (quando existir histórico), atualiza `HEAD` e imprime o hash do Commit criado. Se `-a AUTHOR` for omitido, utiliza `ANEDOTA_AUTHOR`, `USER` ou `desconhecido`.
 
+## Histórico de Commits (`log`)
+
+A API em `include/anedota/log.h` consulta o histórico de commits a partir da referência atual (`HEAD`) por meio de `anedota_log_read(root_path, log_out)` (ou a partir de um commit arbitrário via `anedota_log_read_from`), percorrendo a cadeia de `parent_hash` do mais recente ao mais antigo utilizando exclusivamente a PAL. Quando o armazenamento ainda não possui commits, retorna sucesso com `count == 0`.
+
+O comando `anedota log` exibe no `stdout` o identificador (hash), autor, data e mensagem de cada commit em ordem do mais recente ao mais antigo, ou informa claramente quando ainda não existem commits no histórico.
+
+## Comparação entre Versões (`diff`)
+
+A API em `include/anedota/diff.h` compara duas versões (hashes de Commit ou de Tree) por meio de `anedota_diff_versions(root_path, from_version, to_version, diff_out)`. A função resolve cada versão para sua Tree, percorre recursivamente as entradas via PAL e classifica itens adicionados (`ANEDOTA_DIFF_ADDED`), removidos (`ANEDOTA_DIFF_REMOVED`) e modificados (`ANEDOTA_DIFF_MODIFIED`) em ordem determinística de caminho. Versões iguais retornam `ANEDOTA_DIFF_OK` com `count == 0`; versões inexistentes ou inválidas retornam códigos de erro específicos (`ANEDOTA_DIFF_ERR_VERSION_NOT_FOUND`, `ANEDOTA_DIFF_ERR_INVALID_VERSION`, etc.) com mensagens descritivas em `anedota_diff_status_message`.
+
+O comando `anedota diff VERSION_A VERSION_B` exibe claramente os itens adicionados (`+ [adicionado]`), removidos (`- [removido]`) e modificados (`~ [modificado]`), informa `Sem diferenças entre as versões.` quando as versões são iguais e exibe mensagem de erro clara no `stderr` quando alguma versão não existe ou é inválida.
+
+## Biblioteca Pública (`libanedota.a`) e Integração em Outros Softwares
+
+O núcleo do ANEDOTA é compilado como biblioteca estática reutilizável (`build/libanedota.a`), completamente desacoplada da CLI, e exposto pelo cabeçalho consolidado `include/anedota/anedota.h` (também acessível via `#include <anedota.h>`). Todas as operações — inicializar, armazenar bytes genéricos em memória (`anedota_blob_write`), recuperar (`anedota_blob_read`), compor Trees, criar Commits, consultar histórico (`anedota_log_read`) e comparar versões (`anedota_diff_versions`) — funcionam diretamente em memória sem invocar a CLI.
+
+- **Compilar biblioteca, CLI e exemplo:** `make all` (ou `make lib` apenas para `build/libanedota.a`)
+- **Executar todos os testes (unitários, integração da API, exemplo hospedeiro e CLI):** `make test`
+- **Documentação completa da API e exemplo mínimo:** [docs/API.md](docs/API.md)
+- **Programa exemplo hospedeiro em C:** [examples/host_app.c](examples/host_app.c) (`./build/examples/host_app`)
+- **Aplicação hospedeira real de exemplo:** `../anedota-notas` (aplicação web em Go integrada diretamente à `libanedota.a` via CGO com `make test-cgo` / `make run-cgo`, sem uso da CLI)
+
 ## 🤝 Contribuição
 - Confira as regras de contribuição desse projeto em [CONTRIBUTING.md](https://github.com/vitormbispo/trabalho-construcao-software/blob/main/CONTRIBUTING.md)
 - Contribua relatando problemas e melhorias nas [issues](https://github.com/vitormbispo/trabalho-construcao-software/issues)!

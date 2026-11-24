@@ -4,6 +4,10 @@
 #include <anedota/hash.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum
 {
     ANEDOTA_TREE_ENTRY_BLOB = 1,
@@ -39,5 +43,9 @@ int anedota_tree_read(const char *root_path, const char *hash,
 
 int anedota_tree_write_directory(const char *root_path, const char *dir_path,
                                  char hash_out[ANEDOTA_SHA256_HEX_SIZE]);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

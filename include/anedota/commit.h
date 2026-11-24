@@ -3,6 +3,10 @@
 
 #include <anedota/hash.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
     const char *tree_hash;
@@ -18,5 +22,9 @@ int anedota_commit_write(const char *root_path,
 
 int anedota_commit_read(const char *root_path, const char *hash,
                         anedota_commit_t **commit_out);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -67,6 +67,8 @@ mkdir sem_repositorio
 (cd sem_repositorio && expect_failure cat-object "$(cat ../expected.txt)")
 (cd sem_repositorio && expect_failure write-tree)
 (cd sem_repositorio && expect_failure commit -m 'sem repo')
+(cd sem_repositorio && expect_failure log)
+(cd sem_repositorio && expect_failure diff "$(printf '%064d' 0)" "$(printf '%064d' 1)")
 
 mkdir -p arvore_a/sub/profundo arvore_a/vazio
 printf 'raiz\n' > arvore_a/raiz.txt
@@ -129,6 +131,48 @@ cmp commit_2.txt repo_commit/.anedota/referencias/branches/main
 (cd repo_commit && expect_failure commit -m 'msg' -m 'dup')
 (cd repo_commit && expect_failure commit -m 'msg' extra)
 
+# Testes do comando log (sem commits, com 1 commit e com multiplos commits)
+mkdir repo_log
+(cd repo_log && "$cli" init >stdout.txt 2>stderr.txt)
+rm repo_log/stdout.txt repo_log/stderr.txt
+(cd repo_log && "$cli" log >../log_vazio.txt 2>../stderr.txt)
+test ! -s stderr.txt
+grep -q 'Nenhum commit encontrado' log_vazio.txt
+(cd repo_log && expect_failure log extra)
+
+(cd repo_commit && "$cli" log >../log_multi.txt 2>../stderr.txt)
+test ! -s stderr.txt
+grep -q "commit $(cat commit_2.txt)" log_multi.txt
+grep -q 'Mensagem: Segundo commit' log_multi.txt
+grep -q 'Autor: Vitor' log_multi.txt
+grep -q "commit $(cat commit_1.txt)" log_multi.txt
+grep -q 'Mensagem: Commit inicial' log_multi.txt
+line_c2=$(grep -n "commit $(cat commit_2.txt)" log_multi.txt | cut -d: -f1)
+line_c1=$(grep -n "commit $(cat commit_1.txt)" log_multi.txt | cut -d: -f1)
+test "$line_c2" -lt "$line_c1"
+
+# Testes do comando diff (adicionado, modificado, removido, igual e erros)
+(cd repo_commit && "$cli" diff "$(cat ../commit_1.txt)" "$(cat ../commit_2.txt)" >../diff_12.txt 2>../stderr.txt)
+test ! -s stderr.txt
+grep -q '~ \[modificado\] arquivo.txt' diff_12.txt
+grep -q '+ \[adicionado\] sub/item.txt' diff_12.txt
+
+rm repo_commit/arquivo.txt
+(cd repo_commit && "$cli" commit -m 'Remove arquivo' -a 'Bruno' >../commit_3.txt 2>../stderr.txt)
+(cd repo_commit && "$cli" diff "$(cat ../commit_2.txt)" "$(cat ../commit_3.txt)" >../diff_23.txt 2>../stderr.txt)
+test ! -s stderr.txt
+grep -q -- '- \[removido\] arquivo.txt' diff_23.txt
+
+(cd repo_commit && "$cli" diff "$(cat ../commit_2.txt)" "$(cat ../commit_2.txt)" >../diff_eq.txt 2>../stderr.txt)
+test ! -s stderr.txt
+grep -q 'Sem diferenças entre as versões' diff_eq.txt
+
+(cd repo_commit && expect_failure diff)
+(cd repo_commit && expect_failure diff "$(cat ../commit_1.txt)")
+(cd repo_commit && expect_failure diff "$(cat ../commit_1.txt)" "$(cat ../commit_2.txt)" extra)
+(cd repo_commit && expect_failure diff "$(printf '%064d' 0)" "$(cat ../commit_1.txt)")
+(cd repo_commit && expect_failure diff "$(cat ../commit_1.txt)" hash_invalido)
+
 expect_failure init extra excedente
 test ! -e extra
 expect_failure init ''
@@ -145,6 +189,8 @@ grep -q 'hash-object FILE' stdout.txt
 grep -q 'cat-object HASH' stdout.txt
 grep -q 'write-tree \[PATH\]' stdout.txt
 grep -q 'commit -m MESSAGE \[-a AUTHOR\]' stdout.txt
+grep -q 'log:' stdout.txt
+grep -q 'diff VERSION_A VERSION_B:' stdout.txt
 "$cli" -h >short.txt
 cmp stdout.txt short.txt
 "$cli" --version >stdout.txt
