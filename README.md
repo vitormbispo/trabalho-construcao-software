@@ -66,6 +66,8 @@ A função `anedota_blob_read(root_path, hash, data_out, size_out)`, declarada e
 
 O comando `anedota hash-object FILE` grava o conteúdo do arquivo no repositório `.anedota` do diretório atual e imprime o hash. É necessário inicializar o repositório antes com `anedota init`.
 
+O comando `anedota cat-object HASH` imprime no `stdout` os bytes do Blob identificado pelo hash no repositório `.anedota` do diretório atual. O conteúdo é emitido sem conversão ou quebra de linha adicional.
+
 ## 🤝 Contribuição
 - Confira as regras de contribuição desse projeto em [CONTRIBUTING.md](https://github.com/vitormbispo/trabalho-construcao-software/blob/main/CONTRIBUTING.md)
 - Contribua relatando problemas e melhorias nas [issues](https://github.com/vitormbispo/trabalho-construcao-software/issues)!

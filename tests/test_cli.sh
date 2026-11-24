@@ -44,12 +44,27 @@ printf 'abc' > 'outro nome.txt'
 cmp stdout.txt expected.txt
 test ! -s stderr.txt
 test "$(find .anedota/objetos -mindepth 1 -maxdepth 1 ! -name sentinel | wc -l | tr -d ' ')" = '1'
+"$cli" cat-object "$(cat expected.txt)" >stdout.txt 2>stderr.txt
+cmp stdout.txt 'arquivo de origem'
+test ! -s stderr.txt
+
+printf '\000\001\377abc\000' > 'arquivo binario'
+"$cli" hash-object 'arquivo binario' >binary_hash.txt 2>stderr.txt
+"$cli" cat-object "$(cat binary_hash.txt)" >stdout.txt 2>stderr.txt
+cmp stdout.txt 'arquivo binario'
+test ! -s stderr.txt
+
 expect_failure hash-object
 expect_failure hash-object ''
 expect_failure hash-object 'arquivo de origem' extra
 expect_failure hash-object inexistente
+expect_failure cat-object
+expect_failure cat-object ''
+expect_failure cat-object "$(printf '%064d' 0)"
+expect_failure cat-object "$(cat expected.txt)" extra
 mkdir sem_repositorio
 (cd sem_repositorio && expect_failure hash-object ../'arquivo de origem')
+(cd sem_repositorio && expect_failure cat-object "$(cat ../expected.txt)")
 
 expect_failure init extra excedente
 test ! -e extra
@@ -64,6 +79,7 @@ grep -q 'COMMANDS:' stdout.txt
 "$cli" --help >stdout.txt
 grep -q 'init \[PATH\]' stdout.txt
 grep -q 'hash-object FILE' stdout.txt
+grep -q 'cat-object HASH' stdout.txt
 "$cli" -h >short.txt
 cmp stdout.txt short.txt
 "$cli" --version >stdout.txt
