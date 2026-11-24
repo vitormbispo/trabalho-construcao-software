@@ -606,3 +606,211 @@ int anedota_tree_read(const char *root_path, const char *hash,
     *tree_out = tree;
     return 0;
 }
+
+typedef struct
+{
+    char *name;
+    pal_dir_entry_type_t pal_type;
+    char hash[ANEDOTA_SHA256_HEX_SIZE];
+} collected_dir_entry_t;
+
+static char *duplicate_string(const char *text)
+{
+    const size_t length = strlen(text);
+    char *copy = malloc(length + 1);
+    if (!copy) return NULL;
+    memcpy(copy, text, length + 1);
+    return copy;
+}
+
+static void free_collected_entries(collected_dir_entry_t *entries, size_t count)
+{
+    if (!entries) return;
+    for (size_t i = 0; i < count; ++i)
+    {
+        free(entries[i].name);
+    }
+    free(entries);
+}
+
+static int append_collected_entry(collected_dir_entry_t **entries,
+                                  size_t *count, size_t *capacity,
+                                  const char *name,
+                                  pal_dir_entry_type_t pal_type)
+{
+    if (*count == *capacity)
+    {
+        const size_t new_capacity = *capacity == 0 ? 16 : *capacity * 2;
+        if (new_capacity <= *capacity ||
+            new_capacity > SIZE_MAX / sizeof(**entries))
+        {
+            return -1;
+        }
+        collected_dir_entry_t *grown = realloc(*entries,
+                                               new_capacity * sizeof(**entries));
+        if (!grown) return -1;
+        *entries = grown;
+        *capacity = new_capacity;
+    }
+
+    char *name_copy = duplicate_string(name);
+    if (!name_copy) return -1;
+
+    (*entries)[*count].name = name_copy;
+    (*entries)[*count].pal_type = pal_type;
+    (*entries)[*count].hash[0] = '\0';
+    ++(*count);
+    return 0;
+}
+
+static int collect_directory_entries(const char *dir_path,
+                                     collected_dir_entry_t **entries_out,
+                                     size_t *count_out)
+{
+    pal_directory_t *directory = pal_dir_open(dir_path);
+    if (!directory) return -1;
+
+    collected_dir_entry_t *collected = NULL;
+    size_t count = 0;
+    size_t capacity = 0;
+    int result = 0;
+
+    const char *name = NULL;
+    pal_dir_entry_type_t entry_type;
+    int next_status;
+    while ((next_status = pal_dir_next(directory, &name, &entry_type)) == 1)
+    {
+        if (entry_type == PAL_DIR_ENTRY_DIRECTORY &&
+            strcmp(name, ".anedota") == 0)
+        {
+            continue;
+        }
+
+        if ((entry_type != PAL_DIR_ENTRY_FILE &&
+             entry_type != PAL_DIR_ENTRY_DIRECTORY) ||
+            !is_valid_tree_name(name) ||
+            append_collected_entry(&collected, &count, &capacity,
+                                   name, entry_type) != 0)
+        {
+            result = -1;
+            break;
+        }
+    }
+
+    if (next_status < 0) result = -1;
+    if (pal_dir_close(directory) != 0) result = -1;
+
+    if (result != 0)
+    {
+        free_collected_entries(collected, count);
+        return -1;
+    }
+
+    *entries_out = collected;
+    *count_out = count;
+    return 0;
+}
+
+static int write_tree_directory_recursive(const char *root_path,
+                                          const char *dir_path,
+                                          char hash_out[ANEDOTA_SHA256_HEX_SIZE]);
+
+static int store_directory_children(const char *root_path, const char *dir_path,
+                                    collected_dir_entry_t *collected,
+                                    size_t count,
+                                    anedota_tree_entry_t *tree_entries)
+{
+    for (size_t i = 0; i < count; ++i)
+    {
+        char *child_path = storage_path(dir_path, collected[i].name);
+        if (!child_path) return -1;
+
+        int status;
+        if (collected[i].pal_type == PAL_DIR_ENTRY_FILE)
+        {
+            status = anedota_blob_write_file(root_path, child_path,
+                                             collected[i].hash);
+            tree_entries[i].type = ANEDOTA_TREE_ENTRY_BLOB;
+        }
+        else
+        {
+            status = write_tree_directory_recursive(root_path, child_path,
+                                                    collected[i].hash);
+            tree_entries[i].type = ANEDOTA_TREE_ENTRY_TREE;
+        }
+
+        free(child_path);
+        if (status != 0) return -1;
+
+        tree_entries[i].name = collected[i].name;
+        tree_entries[i].hash = collected[i].hash;
+    }
+
+    return 0;
+}
+
+static int write_tree_directory_recursive(const char *root_path,
+                                          const char *dir_path,
+                                          char hash_out[ANEDOTA_SHA256_HEX_SIZE])
+{
+    collected_dir_entry_t *collected = NULL;
+    size_t count = 0;
+    if (collect_directory_entries(dir_path, &collected, &count) != 0)
+    {
+        return -1;
+    }
+
+    anedota_tree_entry_t *tree_entries = NULL;
+    int result = 0;
+    if (count > 0)
+    {
+        if (count > SIZE_MAX / sizeof(*tree_entries))
+        {
+            result = -1;
+        }
+        else
+        {
+            tree_entries = malloc(count * sizeof(*tree_entries));
+            if (!tree_entries) result = -1;
+        }
+    }
+
+    char tree_hash[ANEDOTA_SHA256_HEX_SIZE];
+    if (result == 0 &&
+        (store_directory_children(root_path, dir_path, collected,
+                                  count, tree_entries) != 0 ||
+         anedota_tree_write(root_path, tree_entries, count, tree_hash) != 0))
+    {
+        result = -1;
+    }
+
+    if (result == 0)
+    {
+        memcpy(hash_out, tree_hash, sizeof(tree_hash));
+    }
+
+    free(tree_entries);
+    free_collected_entries(collected, count);
+    return result;
+}
+
+int anedota_tree_write_directory(const char *root_path, const char *dir_path,
+                                 char hash_out[ANEDOTA_SHA256_HEX_SIZE])
+{
+    if (!root_path || root_path[0] == '\0' ||
+        !dir_path || dir_path[0] == '\0' || !hash_out)
+    {
+        return -1;
+    }
+
+    char *objects_path = storage_path(root_path, "objetos");
+    if (!objects_path) return -1;
+    const int objects_exists = pal_dir_exists(objects_path);
+    free(objects_path);
+    if (objects_exists != 1 || pal_dir_exists(dir_path) != 1)
+    {
+        return -1;
+    }
+
+    return write_tree_directory_recursive(root_path, dir_path, hash_out);
+}

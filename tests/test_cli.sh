@@ -65,6 +65,39 @@ expect_failure cat-object "$(cat expected.txt)" extra
 mkdir sem_repositorio
 (cd sem_repositorio && expect_failure hash-object ../'arquivo de origem')
 (cd sem_repositorio && expect_failure cat-object "$(cat ../expected.txt)")
+(cd sem_repositorio && expect_failure write-tree)
+
+mkdir -p arvore_a/sub/profundo arvore_a/vazio
+printf 'raiz\n' > arvore_a/raiz.txt
+printf 'sub\n' > arvore_a/sub/interno.txt
+printf 'folha\n' > arvore_a/sub/profundo/folha.txt
+(cd arvore_a && "$cli" init >stdout.txt 2>stderr.txt)
+rm arvore_a/stdout.txt arvore_a/stderr.txt
+(cd arvore_a && "$cli" write-tree >../tree_hash_1.txt 2>../stderr.txt)
+test ! -s stderr.txt
+test "$(wc -c < tree_hash_1.txt | tr -d ' ')" = '65'
+test -f "arvore_a/.anedota/objetos/$(cat tree_hash_1.txt)"
+(cd arvore_a && "$cli" write-tree >../tree_hash_2.txt 2>../stderr.txt)
+test ! -s stderr.txt
+cmp tree_hash_1.txt tree_hash_2.txt
+
+mkdir -p arvore_b/sub/profundo arvore_b/vazio
+printf 'folha\n' > arvore_b/sub/profundo/folha.txt
+printf 'sub\n' > arvore_b/sub/interno.txt
+printf 'raiz\n' > arvore_b/raiz.txt
+"$cli" write-tree arvore_b >tree_hash_b.txt 2>stderr.txt
+test ! -s stderr.txt
+cmp tree_hash_1.txt tree_hash_b.txt
+
+"$cli" write-tree arvore_b/sub >subtree_hash.txt 2>stderr.txt
+test ! -s stderr.txt
+test -f ".anedota/objetos/$(cat subtree_hash.txt)"
+test "$(cat subtree_hash.txt)" != "$(cat tree_hash_b.txt)"
+
+expect_failure write-tree ''
+expect_failure write-tree arvore_b extra
+expect_failure write-tree inexistente
+expect_failure write-tree 'arquivo de origem'
 
 expect_failure init extra excedente
 test ! -e extra
@@ -80,6 +113,7 @@ grep -q 'COMMANDS:' stdout.txt
 grep -q 'init \[PATH\]' stdout.txt
 grep -q 'hash-object FILE' stdout.txt
 grep -q 'cat-object HASH' stdout.txt
+grep -q 'write-tree \[PATH\]' stdout.txt
 "$cli" -h >short.txt
 cmp stdout.txt short.txt
 "$cli" --version >stdout.txt
