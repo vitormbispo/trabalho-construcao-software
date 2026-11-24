@@ -84,6 +84,8 @@ O formato serializado é binário e determinístico: os 8 bytes ASCII `ANEDOTAC`
 
 A referência atual do armazenamento é gerenciada pela API em `include/anedota/ref.h` exclusivamente via PAL, utilizando `HEAD` (por padrão `ref: referencias/branches/main`) e `referencias/branches/`. `anedota_ref_read_head` retorna `0` quando o armazenamento ainda não possui commits, `1` quando há histórico (preenchendo o hash do Commit atual) e `-1` em caso de erro. Ao criar um novo Commit com `anedota_commit_write`, a referência atual é atualizada automaticamente para apontar para o novo Commit.
 
+O comando `anedota commit -m MESSAGE [-a AUTHOR]` gera o snapshot completo do diretório atual em uma Tree, cria o Commit encadeado à referência atual (quando existir histórico), atualiza `HEAD` e imprime o hash do Commit criado. Se `-a AUTHOR` for omitido, utiliza `ANEDOTA_AUTHOR`, `USER` ou `desconhecido`.
+
 ## 🤝 Contribuição
 - Confira as regras de contribuição desse projeto em [CONTRIBUTING.md](https://github.com/vitormbispo/trabalho-construcao-software/blob/main/CONTRIBUTING.md)
 - Contribua relatando problemas e melhorias nas [issues](https://github.com/vitormbispo/trabalho-construcao-software/issues)!
