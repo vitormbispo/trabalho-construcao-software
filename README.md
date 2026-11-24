@@ -62,6 +62,8 @@ A inicialização cria a seguinte estrutura, usando as operações de diretório
 
 A função `anedota_blob_write_file(root_path, source_path, hash_out)`, também declarada em `include/anedota/storage.h`, lê o arquivo de origem por meio da PAL, calcula o seu SHA-256 e grava apenas o conteúdo bruto em `<root_path>/objetos/<hash>`, sem metadados do arquivo original. Se o objeto correspondente ao hash já existir no armazenamento, ele é preservado sem duplicação ou regravação. Em caso de sucesso, preenche `hash_out` com os 64 caracteres hexadecimais do hash e retorna `0`; em caso de erro, retorna `-1`.
 
+A função `anedota_blob_read(root_path, hash, data_out, size_out)`, declarada em `include/anedota/storage.h`, lê por meio da PAL o Blob identificado por `hash` em `<root_path>/objetos/<hash>`. Em caso de sucesso, aloca um buffer com o conteúdo original do Blob (com um terminador nulo adicional ao final), atribui o ponteiro a `*data_out`, o tamanho em bytes a `*size_out` e retorna `0` (cabendo ao chamador liberar `*data_out` com `free`). Em caso de argumento inválido, hash inexistente ou erro de leitura, retorna `-1` sem alterar `*data_out` e `*size_out`.
+
 O comando `anedota hash-object FILE` grava o conteúdo do arquivo no repositório `.anedota` do diretório atual e imprime o hash. É necessário inicializar o repositório antes com `anedota init`.
 
 ## 🤝 Contribuição

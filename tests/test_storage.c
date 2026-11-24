@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <pal/pal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -257,12 +258,91 @@ static void test_blob_write_duplicate(void)
     printf("[PASS] test_blob_write_duplicate\n");
 }
 
+static void test_blob_read(void)
+{
+    cleanup_storage();
+
+    const char *root = "test_anedota_storage";
+    const char *source_a = "test_blob_source_a.txt";
+    const char *source_b = "test_blob_source_b.bin";
+    const char *empty_source = "test_blob_empty.txt";
+    const char *large_source = "test_blob_large.bin";
+    const char *abc_hash = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
+    const char *missing_hash = "0000000000000000000000000000000000000000000000000000000000000000";
+
+    char *data = (char *)0x1;
+    size_t size = 999;
+
+    /* Falha se o armazenamento não foi inicializado ou os argumentos forem inválidos */
+    assert(anedota_blob_read(root, abc_hash, &data, &size) == -1);
+    assert(data == (char *)0x1 && size == 999);
+
+    assert(anedota_storage_init(root) == 0);
+    assert(anedota_blob_read(NULL, abc_hash, &data, &size) == -1);
+    assert(anedota_blob_read("", abc_hash, &data, &size) == -1);
+    assert(anedota_blob_read(root, NULL, &data, &size) == -1);
+    assert(anedota_blob_read(root, "", &data, &size) == -1);
+    assert(anedota_blob_read(root, "curto", &data, &size) == -1);
+    assert(anedota_blob_read(root, "../ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f2001", &data, &size) == -1);
+    assert(anedota_blob_read(root, "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD", &data, &size) == -1);
+    assert(anedota_blob_read(root, abc_hash, NULL, &size) == -1);
+    assert(anedota_blob_read(root, abc_hash, &data, NULL) == -1);
+    assert(anedota_blob_read(root, missing_hash, &data, &size) == -1);
+    assert(data == (char *)0x1 && size == 999);
+
+    /* Hash válido retorna o conteúdo textual original do Blob */
+    char hash[ANEDOTA_SHA256_HEX_SIZE];
+    write_test_file(source_a, "abc", 3);
+    assert(anedota_blob_write_file(root, source_a, hash) == 0);
+    assert(anedota_blob_read(root, hash, &data, &size) == 0);
+    assert(data != NULL);
+    assert(size == 3);
+    assert(memcmp(data, "abc", 3) == 0);
+    assert(data[3] == '\0');
+    free(data);
+
+    /* Hash válido retorna conteúdo binário com bytes nulos */
+    const unsigned char binary[] = { 0, 1, 255, 'a', 'b', 'c', 0 };
+    write_test_file(source_b, binary, sizeof(binary));
+    assert(anedota_blob_write_file(root, source_b, hash) == 0);
+    assert(anedota_blob_read("test_anedota_storage/", hash, &data, &size) == 0);
+    assert(data != NULL);
+    assert(size == sizeof(binary));
+    assert(memcmp(data, binary, sizeof(binary)) == 0);
+    free(data);
+
+    /* Hash válido retorna conteúdo de Blob vazio */
+    write_test_file(empty_source, "", 0);
+    assert(anedota_blob_write_file(root, empty_source, hash) == 0);
+    assert(anedota_blob_read(root, hash, &data, &size) == 0);
+    assert(data != NULL);
+    assert(size == 0);
+    assert(data[0] == '\0');
+    free(data);
+
+    /* Hash válido retorna conteúdo de Blob com múltiplos blocos (> 4096 bytes) */
+    unsigned char large_bytes[4097];
+    for (size_t i = 0; i < sizeof(large_bytes); ++i)
+        large_bytes[i] = (unsigned char)i;
+    write_test_file(large_source, large_bytes, sizeof(large_bytes));
+    assert(anedota_blob_write_file(root, large_source, hash) == 0);
+    assert(anedota_blob_read(root, hash, &data, &size) == 0);
+    assert(data != NULL);
+    assert(size == sizeof(large_bytes));
+    assert(memcmp(data, large_bytes, sizeof(large_bytes)) == 0);
+    free(data);
+
+    cleanup_storage();
+    printf("[PASS] test_blob_read\n");
+}
+
 int main(void)
 {
     printf("Executando testes do armazenamento...\n");
     test_storage_init();
     test_blob_write_new();
     test_blob_write_duplicate();
+    test_blob_read();
     printf("Testes do armazenamento concluídos com sucesso\n");
     return 0;
 }

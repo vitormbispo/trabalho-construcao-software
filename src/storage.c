@@ -1,5 +1,6 @@
 #include <anedota/storage.h>
 #include <pal/pal.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -146,4 +147,109 @@ int anedota_blob_write_file(const char *root_path, const char *source_path,
     free(temp_path);
     free(objects_path);
     return result;
+}
+
+static int is_valid_sha256_hex(const char *hash)
+{
+    if (!hash) return 0;
+
+    for (size_t i = 0; i < ANEDOTA_SHA256_HEX_SIZE - 1; ++i)
+    {
+        const char c = hash[i];
+        if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')))
+        {
+            return 0;
+        }
+    }
+    return hash[ANEDOTA_SHA256_HEX_SIZE - 1] == '\0';
+}
+
+int anedota_blob_read(const char *root_path, const char *hash,
+                      char **data_out, size_t *size_out)
+{
+    if (!root_path || root_path[0] == '\0' ||
+        !is_valid_sha256_hex(hash) || !data_out || !size_out)
+    {
+        return -1;
+    }
+
+    char *objects_path = storage_path(root_path, "objetos");
+    if (!objects_path) return -1;
+    if (pal_dir_exists(objects_path) != 1)
+    {
+        free(objects_path);
+        return -1;
+    }
+
+    char *blob_path = storage_path(objects_path, hash);
+    free(objects_path);
+    if (!blob_path) return -1;
+
+    if (pal_file_exists(blob_path) != 1)
+    {
+        free(blob_path);
+        return -1;
+    }
+
+    pal_file_t *file = pal_open(blob_path, "rb");
+    free(blob_path);
+    if (!file) return -1;
+
+    size_t capacity = 4096;
+    size_t length = 0;
+    char *data = malloc(capacity + 1);
+    if (!data)
+    {
+        pal_close(file);
+        return -1;
+    }
+
+    char chunk[4096];
+    int count;
+    int result = 0;
+    while ((count = pal_read(file, chunk, sizeof(chunk))) > 0)
+    {
+        const size_t read_bytes = (size_t)count;
+        if (read_bytes > SIZE_MAX - 1 - length)
+        {
+            result = -1;
+            break;
+        }
+        if (length + read_bytes > capacity)
+        {
+            size_t new_capacity = capacity;
+            while (new_capacity < length + read_bytes)
+            {
+                if (new_capacity > (SIZE_MAX - 1) / 2)
+                {
+                    new_capacity = length + read_bytes;
+                    break;
+                }
+                new_capacity *= 2;
+            }
+            char *grown = realloc(data, new_capacity + 1);
+            if (!grown)
+            {
+                result = -1;
+                break;
+            }
+            data = grown;
+            capacity = new_capacity;
+        }
+        memcpy(data + length, chunk, read_bytes);
+        length += read_bytes;
+    }
+    if (count < 0) result = -1;
+    if (pal_close(file) != 0) result = -1;
+
+    if (result != 0)
+    {
+        free(data);
+        return -1;
+    }
+
+    data[length] = '\0';
+    *data_out = data;
+    *size_out = length;
+    return 0;
 }
