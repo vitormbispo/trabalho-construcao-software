@@ -12,6 +12,8 @@ API de versionamento
 
 ---
 
+**OBS:** a branch `main` compreende ao trabalho realizado pela equipe nas sprints, a versão completa com uso de IA + software de exemplo se encontra na branch `main-secondary`
+
 ## 🔎Visão Geral
 
 O ANEDOTA é uma biblioteca/API de versionamento que pode ser utilizada por outros softwares para armazenar e consultar versões de seus dados. Seu objetivo é oferecer uma implementação menor e reutilizável das operações básicas de versionamento.
